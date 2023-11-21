@@ -1,26 +1,29 @@
 #pragma once
 
+
+//UPDATE THESE IF CHEAT DOESNT WORK AFTER UPDATE nigga i am gay!!
+
 enum offsets : std::int32_t {
-	BoneMatrix = 0x157E9E8,
-	StaticFindObject = 0x10061f0,
-	CurrentVehicle = 0x27F8,
-	LastFireTime = 0xC98,
-	LastFireTimeVerified = 0xC9C,
-	CustomTimeDilation = 0x64,
-	GlobalAnimRateScale = 0xA70,
-	Mesh = 0x318,
-	bIsReloadingWeapon = 0x360,
-	VehicleAttributes = 0x10F0,
-	CachedSpeed = 0xD10,
-	TopSpeedCurrentMultiplier = 0x968,
-	PushForceCurrentMultiplier = 0x96C,
-	WaterEffectsVehicleMaxSpeedKmh = 0x7FC,
-	bAdsWhileNotOnGround = 0x5468,
-	bDisableEquipAnimation = 0x362,
-	bIgnoreTryToFireSlotCooldownRestriction = 0x12C9,
-	ZiplineState = 0x24E0,
-	TriggerType = 0xB4C,
-	WeaponData = 0x498,
+	bonematrix = 0x11F2D70, // needs to be found in IDA 
+	staticfindobject = 0x1216928, // needs to be found in IDA
+	drawtransition = 113, // needs to be found in IDA
+	processevent = 77, // needs to be found in IDA
+	offset_get_name = 0x18, // can be found in SDK
+	offset_displayname = 0x98, // can be found in SDK
+	offset_tier = 0x73, // can be found in SDK
+	offset_viewportclient = 0x78, // can be found in SDK
+	offset_get_font = 0x70, // can be found in SDK
+	offset_get_world = 0x78, // can be found in SDK
+	offset_balreadysearched = 0xeea, // can be found in SDK
+	offset_clip_x = 0x30, // can be found in SDK
+	offset_clip_y = 0x34, // can be found in SDK
+	offset_get_item_definition = 0x350 + 0x18, // can be found in SDK
+	offset_is_active = 0x2b8, // can be found in SDK
+    offset_get_pawn_mesh = 0x318, // can be found in SDK
+    offset_input_pitch_scale = 0x534, // can be found in SDK
+    offset_input_yaw_scale = 0x530, // can be found in SDK
+    offset_get_viewport = 0x78, // can be found in SDK
+    offset_get_local_players = 0x38, // can be found in SDK
 };
 
 
@@ -171,22 +174,22 @@ struct fkey {
 class uobject {
 public:
 	fname get_name() {
-		return read<fname>(std::uintptr_t(this) + 0x18);
+		return read<fname>(std::uintptr_t(this) + offset_get_name);
 	}
 	static uobject* find_object(const wchar_t* name, uobject* outer = nullptr) {
 		return reinterpret_cast<uobject*>(uobject::static_find_objecttwo(nullptr, outer, name));
 	}
 
 	static uobject* static_find_objecttwo(uobject* klass, uobject* outer, const wchar_t* name) {
-		return reinterpret_cast<uobject * (*)(uobject*, uobject*, const wchar_t*)>(game + offsets::StaticFindObject)(klass, outer, name);
+		return reinterpret_cast<uobject * (*)(uobject*, uobject*, const wchar_t*)>(game + offsets::staticfindobject)(klass, outer, name);
 	}
 
 	static uobject* static_find_object(uobject* klass, uobject* outer, const wchar_t* name, bool exact) {
-		return reinterpret_cast<uobject * (*)(uobject*, uobject*, const wchar_t*, bool)>(game + offsets::StaticFindObject)(klass, outer, name, exact);
+		return reinterpret_cast<uobject * (*)(uobject*, uobject*, const wchar_t*, bool)>(game + offsets::staticfindobject)(klass, outer, name, exact);
 	}
 	void process_event(uobject* function, void* args) {
 		auto vtable = *reinterpret_cast<void***>(this);
-		reinterpret_cast<void(*)(void*, void*, void*)>(vtable[0x4D])(this, function, args);
+		reinterpret_cast<void(*)(void*, void*, void*)>(vtable[offsets::processevent])(this, function, args);
 	}
 };
 
@@ -194,11 +197,11 @@ public:
 class ucanvas : public uobject {
 public:
 	float clip_x() {
-		return read<float>(std::uintptr_t(this) + 0x30); //maybe wrong
+		return read<float>(std::uintptr_t(this) + offset_clip_x); //OK
 	}
 
 	float clip_y() {
-		return read<float>(std::uintptr_t(this) + 0x34); //maybe wrong
+		return read<float>(std::uintptr_t(this) + offset_clip_y); //OK
 	}
 
 	fvector2d k2_text_size(uobject* render_font, fstring render_text, fvector2d scale) {
@@ -258,14 +261,14 @@ public:
 class uengine : public uobject {
 public:
 	uobject* get_font() {
-		return read<uobject*>(std::uintptr_t(this) + 0x70);
+		return read<uobject*>(std::uintptr_t(this) + offset_get_font);
 	}
 };
 
 class ugameviewportclient : public uobject {
 public:
 	uworld* get_world() {
-		return read<uworld*>(std::uintptr_t(this) + 0x78);
+		return read<uworld*>(std::uintptr_t(this) + offset_get_world);
 	}
 };
 
@@ -273,11 +276,11 @@ class item_definition : public uobject {
 public:
 	//enum class EFortItemTier Tier; // 0x74(0x01)
 	fort_item_tier get_tier() {
-		return read<fort_item_tier>(std::uintptr_t(this) + 0x73);
+		return read<fort_item_tier>(std::uintptr_t(this) + offset_tier);
 	}
 
 	ftext display_name() {
-		return read<ftext>(std::uintptr_t(this) + 0x98);
+		return read<ftext>(std::uintptr_t(this) + offset_displayname);
 	}
 };
 
@@ -340,7 +343,7 @@ public:
 
 	fvector get_bone_location(std::int32_t index) {
 		fmatrix out_matrix = { };
-		reinterpret_cast<fmatrix* (*)(mesh*, fmatrix*, std::int32_t)>(game + offsets::BoneMatrix)(this, &out_matrix, index);
+		reinterpret_cast<fmatrix* (*)(mesh*, fmatrix*, std::int32_t)>(game + offsets::bonematrix)(this, &out_matrix, index);
 
 		return fvector(out_matrix.m[3][0], out_matrix.m[3][1], out_matrix.m[3][2]);
 	}
@@ -488,7 +491,7 @@ struct container_struct_0x102a {
 class container_actor : public actor {
 public:
 	bool already_searched() {
-		return read<container_struct_0x102a>(std::uintptr_t(this) + 0xeea).bAlreadySearched;
+		return read<container_struct_0x102a>(std::uintptr_t(this) + offset_balreadysearched).bAlreadySearched;
 	}
 };
 
@@ -529,11 +532,10 @@ public:
 		return params.return_value;
 	}
 };
-
 class pickup_actor : public actor {
 public:
 	item_definition* get_item_definition() {
-		return read<item_definition*>(std::uintptr_t(this) + 0x338 + 0x18);
+		return read<item_definition*>(std::uintptr_t(this) + offset_get_item_definition);
 	}
 };
 
@@ -547,7 +549,7 @@ struct weakspot_struft_0x2b8 {
 class weakspot_actor : public actor {
 public:
 	bool is_active() {
-		weakspot_struft_0x2b8 weakspot_struct = read<weakspot_struft_0x2b8>(std::uintptr_t(this) + 0x2b8);
+		weakspot_struft_0x2b8 weakspot_struct = read<weakspot_struft_0x2b8>(std::uintptr_t(this) + offset_is_active);
 		return weakspot_struct.bActive;
 	}
 };
@@ -557,7 +559,7 @@ class player_pawn : public actor {
 public:
 
 	mesh* get_pawn_mesh() {
-		return read<mesh*>(std::uintptr_t(this) + 0x318);
+		return read<mesh*>(std::uintptr_t(this) + offset_get_pawn_mesh);
 	}
 
 	bool is_in_vehicle() {
@@ -633,11 +635,11 @@ public:
 class aplayercontroller : public uobject {
 public:
 	float input_pitch_scale() {
-		return read<float>(std::uintptr_t(this) + 0x534);
+		return read<float>(std::uintptr_t(this) + offset_input_pitch_scale);
 	}
 
 	float input_yaw_scale() {
-		return read<float>(std::uintptr_t(this) + 0x530);
+		return read<float>(std::uintptr_t(this) + offset_input_yaw_scale);
 	}
 
 	bool is_key_down(fkey key) {
@@ -756,14 +758,14 @@ public:
 class ulocalplayer : public uobject {
 public:
 	ugameviewportclient* get_viewport() {
-		return read<ugameviewportclient*>(std::uintptr_t(this) + 0x78);
+		return read<ugameviewportclient*>(std::uintptr_t(this) + offset_get_viewport);
 	}
 };
 
 class ugameinstance : public uobject {
 public:
 	tarray<ulocalplayer*> get_local_players() {
-		return read<tarray<ulocalplayer*>>(std::uintptr_t(this) + 0x38);
+		return read<tarray<ulocalplayer*>>(std::uintptr_t(this) + offset_get_local_players);
 	}
 };
 
